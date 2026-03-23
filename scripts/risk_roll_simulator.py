@@ -33,7 +33,7 @@ def write_results_to_file(filename:str, mean:list, std:list):
 
 def simulate_attacks(n_attackers:int, n_defenders:int, n_trials:int):
     '''
-    Runs a simulation of continuous attacks tp dertermine how often
+    Runs a simulation of continuous attacks to dertermine how often
     an attacker will will or lose, under different numbers of defenders
     
     :param n_attackers: Description
@@ -45,16 +45,16 @@ def simulate_attacks(n_attackers:int, n_defenders:int, n_trials:int):
 
     # Where the number of wins an losses will be kept
     win_loss_ratio = defaultdict(int)
-    if n_attackers <= n_defenders:
-        win_loss_ratio["attacker"] = 0
-        win_loss_ratio["defender"] = 100
-        win_loss_ratio["draw"] = 0
-        return win_loss_ratio
+    # if n_attackers < n_defenders:
+    #     win_loss_ratio["attacker"] = 0
+    #     win_loss_ratio["defender"] = 100
+    #     win_loss_ratio["draw"] = 0
+    #     return win_loss_ratio
 
     # General Rules for attacking in RISK
     # 1. The Attacker must have 2 solders in order to attack.
     # 2. The attacker can choose to attack with at most 3 soldiers at a time
-    # 3. In the case of a draw, the defender prevails
+    # 3. In the case of a draw, the defender wins
     
     # print(f"Start Att, Def: {n_attackers} {n_defenders}")
     for i in range(n_trials):
@@ -64,10 +64,14 @@ def simulate_attacks(n_attackers:int, n_defenders:int, n_trials:int):
         
         # Stop attacking if you have less soldiers than the defender
         # Stop attacking if the defender has no more soldiers
-        # while (trial_attackers > trial_defenders) and (trial_defenders > 0):
+        # while (trial_attackers >= trial_defenders) and (trial_defenders > 0):
+        # while (trial_attackers >= trial_defenders) and (trial_defenders > 0) and (trial_attackers > 1):
+        # To attack at all, the attacker must have more than 1 soldier, e.g 2+
+        # while (trial_attackers > 1) and (trial_defenders > 0):
 
-        # To attack at all, the attacker must have more than 1 soldier
-        while (trial_attackers > 1) and (trial_defenders > 0):
+        # Stop attacking if my army count is 1 less than my opponent 
+        while (trial_attackers > trial_defenders-2) and (trial_defenders > 0) and (trial_attackers > 1):
+
 
             # print(trial_attackers, trial_defenders)
             if trial_defenders > 0 :
@@ -92,13 +96,13 @@ def simulate_attacks(n_attackers:int, n_defenders:int, n_trials:int):
             # print("attacker_win")
             win_loss_ratio["attacker"] += 1
         # If the defender has more soldiers than the attacker, they win
-        elif trial_defenders > trial_attackers:
+        elif trial_attackers < 2:
             # print("defender_win")
             win_loss_ratio["defender"] += 1
         # draw if both have soldiers remaining  
         else:
             # print("draw")
-            win_loss_ratio["draw"] +=1
+            win_loss_ratio["cease_fire"] +=1
 
 
 
@@ -170,7 +174,7 @@ def plot_results(x_vals, mean_win_arr, std_win_arr,
     plt.figure(figsize=(15, 6))
     plt.errorbar(x_vals, mean_win_arr, yerr=std_win_arr, label='Attacker Win %', fmt='-o')
     plt.errorbar(x_vals, mean_loss_arr, yerr=std_loss_arr, label='Defender Win %', fmt='-o')
-    plt.errorbar(x_vals, mean_draw_arr, yerr=std_draw_arr, label='Draw %', fmt='-o')
+    plt.errorbar(x_vals, mean_draw_arr, yerr=std_draw_arr, label='Cease Fire %', fmt='-o')
     plt.title(f'RISK Attack Simulation Results (Defenders: {defenders})')
     plt.xlabel('Number of Attackers')
     plt.ylabel('Percentage (%)')
@@ -192,7 +196,8 @@ def plot_results(x_vals, mean_win_arr, std_win_arr,
 
 # Specifying the number of defenders
 # Will loop through different numbers of attackers later
-max_defenders = range(2, 41)
+max_defenders = range(2, 25)
+# max_defenders = range(18, 25)
 
 
 # Create pandas dataframe to hold results
@@ -221,7 +226,7 @@ for defenders in max_defenders:
             # wlr = simulate_fast(attackers, defenders, 100)
             win_arr.append(wlr["attacker"])
             loss_arr.append(wlr["defender"])
-            draw_arr.append(wlr["draw"])
+            draw_arr.append(wlr["cease_fire"])
         print(f"Attackers: {attackers}, Defenders: {defenders} => Win%: {statistics.mean(win_arr):.2f} +/- {statistics.stdev(win_arr):.2f}")
         mean_win_arr.append(statistics.mean(win_arr))
         mean_loss_arr.append(statistics.mean(loss_arr))
